@@ -50,7 +50,7 @@ EXPLOIT SUBDOMAIN TAKEOVER
 subzy run --targets clean_subdomains.txt
 
 POSSIBLE SCANS WITH NUCLEI
-nuclei -l all_subdomains.txt -severity high,critical -rate-limit 150
+nuclei -l all_subdomains.txt -severity high,critical -c 50 -rate-limit 100
 nuclei -l js_urls.txt -tags exposure,token,js -severity low,medium,high -rate-limit 100
 nuclei -l json_urls.txt -tags api,exposure -severity medium,high -rate-limit 80
 nuclei -l sqli_candidates.txt -tags sqli
