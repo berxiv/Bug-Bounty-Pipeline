@@ -1,0 +1,5 @@
+for my authorised bug bounty take a look at the technologies identified below and point out anything that looks to be potentially vulnerable, then provide me detailed steps on exactly how to test for said vulnerability / what to look into with maximum detail including what tools to use / commands to run / why / code. show me how to do everything
+
+┌──(cn)-[~/bugbounty]
+└─$ cat technologies.txt
+here
