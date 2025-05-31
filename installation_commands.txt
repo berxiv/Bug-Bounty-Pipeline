@@ -29,4 +29,7 @@ sudo mkswap /swapfile2 && \
 sudo swapon /swapfile2 && \
 echo "/swapfile2 swap swap defaults 0 0" | sudo tee -a /etc/fstab && \
 rm -rf Arjun && \
-mkdir bugbounty
+mkdir bugbounty && \
+go install github.com/tomnomnom/gf@latest && \
+sudo apt install seclists && \
+sudo apt install python3-setuptools

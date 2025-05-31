@@ -62,7 +62,7 @@ CHECK FOR ANY OUTDATED JS MODULES
 mkdir -p js_tmp && cd js_tmp && xargs -n 1 -P 10 curl -sO < ../js_urls.txt && retire --path . && cd .. && rm -rf js_tmp
 
 USEFUL DIRECTORY BRUTEFORCING COMMANDS / COMMANDS TO DIRECTORY BRUTEFORCE ALL FOUND SUBDOMAINS
-dirsearch -u http://target.com/v1 -w /usr/share/seclists/Discovery/Web-Content/common.txt -e php,js,jpg,png,html,json,txt -t 50 --follow-redirects
+dirsearch -u https://target.com/ -w /usr/share/seclists/Discovery/Web-Content/common.txt -e php,js,jpg,png,html,json,txt -t 50 --follow-redirects
 
 dirsearch -u http://target.com/v1 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -e php,js,jpg,png,html,json,txt -t 50 --follow-redirects
 
