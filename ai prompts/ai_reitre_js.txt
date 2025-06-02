@@ -1,0 +1,5 @@
+below is retire js used for an authorised bug bounty i'm performing, please give me in maximum detail instructions on everything to test for accounting for anything intersting below and exactly what to do to find / confirm any possible vulnerability here (make sure to explain exactly what i'm doing at each step and why too in detail, make sure to include what to expect / and what to look out for in every test)
+
+┌──(c㉿DESKTOP-CCQQ0ES)-[~/bugbounty/js_tmp]
+└─$ retire --path . && cd .. && rm -rf js_tmp
+here
