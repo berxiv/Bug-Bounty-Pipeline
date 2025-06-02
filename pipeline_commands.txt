@@ -28,7 +28,7 @@ FIND TECHNOLOGIES USED IN EVERY SUBDOMAIN
 httpx -l clean_subdomains.txt -tech-detect >> technologies.txt
 
 FIND SECRETS
-python3 /home/c/tools/SecretFinder/SecretFinder.py -i js_urls.txt -o possible_secrets_secretfinder.html && trufflehog filesystem ./ --json > possible_secrets_trufflehog.json
+python3 /home/c/tools/SecretFinder/SecretFinder.py -i all_subdomains.txt -o possible_secrets_secretfinder.html && trufflehog filesystem ./ --json > possible_secrets_trufflehog.json
 
 https://beautifier.io/
 https://nitinyadav00.github.io/Bug-Bounty-Search-Engine/
