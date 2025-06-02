@@ -7,17 +7,15 @@
                                                              
                                                              
 
-MAIN ENUMERATION COMMAND (FIND SUBDOMAINS, JS FILES, JSON FILES, AND TECHNOLOGY)
+MAIN ENUMERATION COMMAND (FIND SUBDOMAINS, JS FILES, JSON FILES, 403 SUBDOMAINS, NOWAF SUBDOMAINS, AND TECHNOLOGY)
 TARGET="target.com" && subfinder -d $TARGET >> subs.txt && waybackurls $TARGET >> subs.txt && gau $TARGET >> subs.txt && assetfinder --subs-only $TARGET >> subs.txt && sort -u subs.txt -o subs.txt && httpx -l subs.txt -o all_subdomains.txt && rm subs.txt && grep -Eo '([a-z0-9.-]+\.)?target\.com' all_subdomains.txt | sort -u > clean_subdomains.txt && \
 grep -Ei '\.js($|\?)' all_subdomains.txt > js_urls.txt && grep -Ei '\.json($|\?)' all_subdomains.txt > json_urls.txt && katana -list js_urls.txt -js-crawl -o js_urls2.txt && cat js_urls.txt js_urls2.txt | sort -u > js_urls_combined.txt && mv js_urls_combined.txt js_urls.txt && rm js_urls2.txt && \
-httpx -l clean_subdomains.txt -tech-detect >> technologies.txt
+httpx -l clean_subdomains.txt -tech-detect >> technologies.txt && \
+cat clean_subdomains.txt | parallel -j10 'echo "[*] Testing {}" >&2; wafw00f {} 2>/dev/null | grep -q "No WAF detected" && echo {}' > nowaf_subdomains.txt && cat all_subdomains.txt | parallel -j10 'status=$(curl -o /dev/null -s -w "%{http_code}" -k -L {}); if [ "$status" = "403" ]; then echo {}; fi' > 403_subdomains.txt && \
+mkdir -p ~/bugbounty/reports && cat 403_subdomains.txt | xargs -P10 -I{} bash -c 'PYTHONWARNINGS="ignore" dirsearch -u "{}" -e php,html,js,json,txt,log,zip,conf,sql -w /usr/share/seclists/Discovery/Web-Content/raft-medium-words.txt --threads 30 --timeout 10 --retries 2 --follow-redirects --full-url --output ~/bugbounty/reports/$(echo "{}" | sed "s|https\?://||;s|/|_|g").txt'
 
 FIND SECRETS
 python3 /home/c/tools/SecretFinder/SecretFinder.py -i all_subdomains.txt -o possible_secrets_secretfinder.html && trufflehog filesystem ./ --json > possible_secrets_trufflehog.json
-
-FIND 403 SUBDOMAINS AND NOWAF SUBDOMAINS / TRY TO DIRECTORY BRUTEFORCE NEW THINGS
-cat clean_subdomains.txt | parallel -j10 'echo "[*] Testing {}" >&2; wafw00f {} 2>/dev/null | grep -q "No WAF detected" && echo {}' > nowaf_subdomains.txt && cat all_subdomains.txt | parallel -j10 'status=$(curl -o /dev/null -s -w "%{http_code}" -k -L {}); if [ "$status" = "403" ]; then echo {}; fi' > 403_subdomains.txt && \
-mkdir -p ~/bugbounty/reports && cat 403_subdomains.txt | xargs -P10 -I{} bash -c 'PYTHONWARNINGS="ignore" dirsearch -u "{}" -e php,html,js,json,txt,log,zip,conf,sql -w /usr/share/seclists/Discovery/Web-Content/raft-medium-words.txt --threads 30 --timeout 10 --retries 2 --follow-redirects --full-url --output ~/bugbounty/reports/$(echo "{}" | sed "s|https\?://||;s|/|_|g").txt'
 
 FIND PARAMETERS / FULL URLS FOR EACH SUBDOMAIN
 paramspider -l clean_subdomains.txt && cat results/*.txt > param_urls_temp.txt && sort -u param_urls_temp.txt -o param_urls.txt && arjun -i param_urls.txt -o arjun_output.txt && cat param_urls.txt arjun_output.txt | sort -u > combined_params.txt && rm -rf results param_urls_temp.txt arjun_output.txt
