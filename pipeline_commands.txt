@@ -8,9 +8,9 @@
                                                              
 
 MAIN ENUMERATION COMMAND (FIND SUBDOMAINS, JS FILES, JSON FILES, 403 SUBDOMAINS, NOWAF SUBDOMAINS, AND TECHNOLOGY)
-TARGET="target.com" && subfinder -d $TARGET >> subs.txt && waybackurls $TARGET >> subs.txt && gau $TARGET >> subs.txt && assetfinder --subs-only $TARGET >> subs.txt && sort -u subs.txt -o subs.txt && httpx -l subs.txt -o all_subdomains.txt && rm subs.txt && grep -Eo '([a-z0-9.-]+\.)?target\.com' all_subdomains.txt | sort -u > clean_subdomains.txt && \
+TARGET="example.com" && subfinder -d $TARGET >> subs.txt && waybackurls $TARGET >> subs.txt && gau $TARGET >> subs.txt && assetfinder --subs-only $TARGET >> subs.txt && sort -u subs.txt -o subs.txt && ~/go/bin/httpx -l subs.txt -o all_subdomains.txt && rm subs.txt && grep -Eo '([a-z0-9.-]+\.)?example\.com' all_subdomains.txt | sort -u > clean_subdomains.txt && \
 grep -Ei '\.js($|\?)' all_subdomains.txt > js_urls.txt && grep -Ei '\.json($|\?)' all_subdomains.txt > json_urls.txt && katana -list js_urls.txt -js-crawl -o js_urls2.txt && cat js_urls.txt js_urls2.txt | sort -u > js_urls_combined.txt && mv js_urls_combined.txt js_urls.txt && rm js_urls2.txt && \
-httpx -l clean_subdomains.txt -tech-detect >> technologies.txt && \
+~/go/bin/httpx -l clean_subdomains.txt -tech-detect >> technologies.txt && \
 cat clean_subdomains.txt | parallel -j10 'echo "[*] Testing {}" >&2; wafw00f {} 2>/dev/null | grep -q "No WAF detected" && echo {}' > nowaf_subdomains.txt && cat all_subdomains.txt | parallel -j10 'status=$(curl -o /dev/null -s -w "%{http_code}" -k -L {}); if [ "$status" = "403" ]; then echo {}; fi' > 403_subdomains.txt && \
 mkdir -p ~/bugbounty/reports && cat 403_subdomains.txt | xargs -P10 -I{} bash -c 'PYTHONWARNINGS="ignore" dirsearch -u "{}" -e php,html,js,json,txt,log,zip,conf,sql -w /usr/share/seclists/Discovery/Web-Content/raft-medium-words.txt --threads 30 --timeout 10 --retries 2 --follow-redirects --full-url --output ~/bugbounty/reports/$(echo "{}" | sed "s|https\?://||;s|/|_|g").txt'
 
@@ -38,7 +38,7 @@ https://nitinyadav00.github.io/Bug-Bounty-Search-Engine/
 
 EXPLOIT XXS, SQLI, AND SSRF
 cat param_urls.txt | gf xss > xss_candidates.txt && cat param_urls.txt | gf sqli > sqli_candidates.txt && cat param_urls.txt | gf ssrf > ssrf_candidates.txt
-dalfox file xss_candidates.txt
+while read url; do python3 /home/c/tools/XSStrike/xsstrike.py -u "$url"; done < xss_candidates.txt
 sqlmap -m sqli_candidates.txt --batch
 cat ssrf_candidates.txt | openredirex -p openredirex/payloads.txt -k "FUZZ" -c 50
 
