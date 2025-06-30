@@ -7,15 +7,30 @@
                                                              
                                                              
 
-MAIN ENUMERATION COMMAND (FIND SUBDOMAINS, JS FILES, JSON FILES, 403 SUBDOMAINS, NOWAF SUBDOMAINS, AND TECHNOLOGY)
-TARGET="example.com" && subfinder -d $TARGET >> subs.txt && waybackurls $TARGET >> subs.txt && gau $TARGET >> subs.txt && assetfinder --subs-only $TARGET >> subs.txt && sort -u subs.txt -o subs.txt && ~/go/bin/httpx -l subs.txt -o all_subdomains.txt && rm subs.txt && grep -Eo '([a-z0-9.-]+\.)?example\.com' all_subdomains.txt | sort -u > clean_subdomains.txt && httpx -l clean_subdomains.txt -p 80,443,3000,5000,8000,8080,8443,10000,9090 -title -tech-detect -status-code -server -ip >> technologies.txt && \
-grep -Ei '\.js($|\?)' all_subdomains.txt > js_urls.txt && grep -Ei '\.json($|\?)' all_subdomains.txt > json_urls.txt && katana -list js_urls.txt -js-crawl -o js_urls2.txt && cat js_urls.txt js_urls2.txt | sort -u > js_urls_combined.txt && mv js_urls_combined.txt js_urls.txt && rm js_urls2.txt && \
+MAIN ENUMERATION COMMAND (FIND SUBDOMAINS, JS FILES, JSON FILES, SECRETS, 403 SUBDOMAINS, NOWAF SUBDOMAINS, AND TECHNOLOGY)
+TARGET="example.com" && \
+subfinder -d $TARGET >> subs.txt && \
+waybackurls $TARGET >> subs.txt && \
+gau $TARGET >> subs.txt && \
+assetfinder --subs-only $TARGET >> subs.txt && \
+sort -u subs.txt -o subs.txt && \
+~/go/bin/httpx -l subs.txt -o all_subdomains.txt && \
+rm subs.txt && \
+grep -Eo '([a-z0-9.-]+\.)?example\.com' all_subdomains.txt | sort -u > clean_subdomains.txt && \
+httpx -l clean_subdomains.txt -p 80,443,3000,5000,8000,8080,8443,10000,9090 -title -tech-detect -status-code -server -ip >> technologies.txt && \
+grep -Ei '\.js($|\?)' all_subdomains.txt > js_urls.txt && \
+grep -Ei '\.json($|\?)' all_subdomains.txt > json_urls.txt && \
+katana -list js_urls.txt -js-crawl -o js_urls2.txt && \
+cat js_urls.txt js_urls2.txt | sort -u > js_urls_combined.txt && \
+mv js_urls_combined.txt js_urls.txt && \
+rm js_urls2.txt && \
 ~/go/bin/httpx -l clean_subdomains.txt -tech-detect >> technologies.txt && \
-cat clean_subdomains.txt | parallel -j10 'echo "[*] Testing {}" >&2; wafw00f {} 2>/dev/null | grep -q "No WAF detected" && echo {}' > nowaf_subdomains.txt && cat all_subdomains.txt | parallel -j10 'status=$(curl -o /dev/null -s -w "%{http_code}" -k -L {}); if [ "$status" = "403" ]; then echo {}; fi' > 403_subdomains.txt && \
-mkdir -p ~/bugbounty/reports && cat 403_subdomains.txt | xargs -P10 -I{} bash -c 'PYTHONWARNINGS="ignore" dirsearch -u "{}" -e php,html,js,json,txt,log,zip,conf,sql -w /usr/share/seclists/Discovery/Web-Content/raft-medium-words.txt --threads 30 --timeout 10 --retries 2 --follow-redirects --full-url --output ~/bugbounty/reports/$(echo "{}" | sed "s|https\?://||;s|/|_|g").txt'
-
-FIND SECRETS
-python3 /home/c/tools/SecretFinder/SecretFinder.py -i all_subdomains.txt -o possible_secrets_secretfinder.html && trufflehog filesystem ./ --json > possible_secrets_trufflehog.json
+cat clean_subdomains.txt | parallel -j10 'echo "[*] Testing {}" >&2; wafw00f {} 2>/dev/null | grep -q "No WAF detected" && echo {}' > nowaf_subdomains.txt && \
+cat all_subdomains.txt | parallel -j10 'status=$(curl -o /dev/null -s -w "%{http_code}" -k -L {}); if [ "$status" = "403" ]; then echo {}; fi' > 403_subdomains.txt && \
+mkdir -p ~/bugbounty/reports && \
+cat 403_subdomains.txt | xargs -P10 -I{} bash -c 'PYTHONWARNINGS="ignore" dirsearch -u "{}" -e php,html,js,json,txt,log,zip,conf,sql -w /usr/share/seclists/Discovery/Web-Content/raft-medium-words.txt --threads 30 --timeout 10 --retries 2 --follow-redirects --full-url --output ~/bugbounty/reports/$(echo "{}" | sed "s|https\?://||;s|/|_|g").txt' && \
+python3 /home/c/tools/SecretFinder/SecretFinder.py -i all_subdomains.txt -o possible_secrets_secretfinder.html && \
+trufflehog filesystem ./ --json > possible_secrets_trufflehog.json
 
 FIND PARAMETERS / FULL URLS FOR EACH SUBDOMAIN
 paramspider -l clean_subdomains.txt && cat results/*.txt > param_urls_temp.txt && sort -u param_urls_temp.txt -o param_urls.txt && rm -rf results param_urls_temp.txt
@@ -52,9 +67,24 @@ CHECK FOR ANY OUTDATED JS MODULES
 mkdir -p js_tmp && cd js_tmp && xargs -n 1 -P 10 curl -sO < ../js_urls.txt && retire --path . && cd .. && rm -rf js_tmp
 
 USEFUL DIRECTORY BRUTEFORCING COMMANDS / COMMANDS TO DIRECTORY BRUTEFORCE ALL FOUND SUBDOMAINS
+dirsearch -u https://api-test.nicehash.com/ -w /usr/share/seclists/Discovery/Web-Content/common.txt -e php,js,jpg,png,html,json,txt -t 50 --follow-redirects
+
 while read url; do dirsearch -u https://$url/ -w /usr/share/seclists/Discovery/Web-Content/common.txt -e php,js,jpg,png,html,json,txt -t 50 --follow-redirects; done < clean_subdomains.txt
 
 while read url; do dirsearch -u "$url/" -w /usr/share/seclists/Discovery/Web-Content/common.txt -e php,js,jpg,png,html,json,txt -H "Referer: https://google.com" -H "X-Forwarded-For: 127.0.0.1" --random-agent --delay 0.5 --max-rate 20 --threads 50 --timeout 10 --exclude-sizes 0 --follow-redirects; done < clean_subdomains.txt
 
 AI ASSISTANCE PROMPT GENERATOR
-(echo 'For my authorised bug bounty, list the most interesting findings below and what to look into also guide me step by step on exactly what commands to run to test and what to look out for and explain in maximum detail why im running these commands'; [ -f clean_subdomains.txt ] && echo -e '\n\n## Subdomains\n' && cat clean_subdomains.txt; [ -f technologies.txt ] && echo -e '\n\n## Technologies\n' && cat technologies.txt; [ -f all_subdomains.txt ] && echo -e '\n\n## Endpoints\n' && cat all_subdomains.txt; [ -f param_urls.txt ] && echo -e '\n\n## Parameters\n' && cat param_urls.txt; { [ -f possible_secrets_secretfinder.html ] || [ -f possible_secrets_trufflehog.json ]; } && echo -e '\n\n## Secrets\n'; [ -f possible_secrets_secretfinder.html ] && cat possible_secrets_secretfinder.html; [ -f possible_secrets_trufflehog.json ] && cat possible_secrets_trufflehog.json; [ -f xss_candidates.txt ] && echo -e '\n\n## XSS Candidates\n' && cat xss_candidates.txt; [ -f sqli_candidates.txt ] && echo -e '\n\n## SQLi Candidates\n' && cat sqli_candidates.txt; [ -f ssrf_candidates.txt ] && echo -e '\n\n## SSRF Candidates\n' && cat ssrf_candidates.txt; [ -f nuclei_scan.txt ] && echo -e '\n\n## Nuclei Results\n' && cat nuclei_scan.txt) > prompt.txt
+{ 
+  echo 'For my authorised bug bounty, list the most interesting findings below and what to look into also guide me step by step on exactly what commands to run to test and what to look out for and explain in maximum detail why im running these commands. Also at the end list the specific what you think are important subdomains I should dirsearch to find endpoints to test (include what endpoints you'll think i'll likely find and why if there are clues).'
+  [ -f clean_subdomains.txt ] && echo -e '\n\n## Subdomains\n' && cat clean_subdomains.txt
+  [ -f technologies.txt ] && echo -e '\n\n## Technologies\n' && cat technologies.txt
+  [ -f all_subdomains.txt ] && echo -e '\n\n## Endpoints\n' && cat all_subdomains.txt
+  [ -f param_urls.txt ] && echo -e '\n\n## Parameters\n' && cat param_urls.txt
+  { [ -f possible_secrets_secretfinder.html ] || [ -f possible_secrets_trufflehog.json ]; } && echo -e '\n\n## Secrets\n'
+  [ -f possible_secrets_secretfinder.html ] && cat possible_secrets_secretfinder.html
+  [ -f possible_secrets_trufflehog.json ] && cat possible_secrets_trufflehog.json
+  [ -f xss_candidates.txt ] && echo -e '\n\n## XSS Candidates\n' && cat xss_candidates.txt
+  [ -f sqli_candidates.txt ] && echo -e '\n\n## SQLi Candidates\n' && cat sqli_candidates.txt
+  [ -f ssrf_candidates.txt ] && echo -e '\n\n## SSRF Candidates\n' && cat ssrf_candidates.txt
+  [ -f nuclei_scan.txt ] && echo -e '\n\n## Nuclei Results\n' && cat nuclei_scan.txt
+} > prompt.txt; explorer.exe .
