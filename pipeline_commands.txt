@@ -7,7 +7,7 @@
                                                              
                                                              
 
-PRIMARY ENUMERATION COMMAND (FIND SUBDOMAINS, JS FILES, JSON FILES, 403 SUBDOMAINS, NOWAF SUBDOMAINS, TECHNOLOGY, FIND PARAMETERS / FULL URLS FOR EACH SUBDOMAIN / SECRETS / SSRF, XSS, SQLI CANDIDATES / AND OUTDATED JS MODULES)
+PRIMARY ENUMERATION COMMANDS (FIND SUBDOMAINS, JS FILES, JSON FILES, 403 SUBDOMAINS, NOWAF SUBDOMAINS, TECHNOLOGY, FIND PARAMETERS / FULL URLS FOR EACH SUBDOMAIN / SECRETS / SSRF, XSS, SQLI CANDIDATES / AND OUTDATED JS MODULES)
 TARGET="target.com" ; \
 TARGETFULL="https://$TARGET" ; \
 subfinder -d $TARGET >> subs.txt ; \
@@ -28,33 +28,28 @@ katana -list clean_subdomains.txt -js-crawl -o js_urls2.txt ; \
 grep -Ei '\.js($|\?)' js_urls2.txt > js_urls2_clean.txt ; \
 cat js_urls.txt js_urls2_clean.txt >> js_urls.txt ; \
 rm js_urls2.txt js_urls2_clean.txt ; \
-sort -u js_urls.txt -o js_urls.txt ; \
+sort -u js_urls.txt -o js_urls.txt
+
 ~/go/bin/httpx -l clean_subdomains.txt -tech-detect >> technologies.txt ; \
 cat clean_subdomains.txt | parallel -j10 'echo "[*] Testing {}" >&2; wafw00f {} 2>/dev/null | grep -q "No WAF detected" && echo {}' > nowaf_subdomains.txt ; \
 cat all_subdomains.txt | parallel -j10 'status=$(curl -o /dev/null -s -w "%{http_code}" -k -L {}); if [ "$status" = "403" ]; then echo {}; fi' > 403_subdomains.txt ; \
 mkdir -p ~/bugbounty/reports ; \
 cat 403_subdomains.txt | xargs -P10 -I{} bash -c 'PYTHONWARNINGS="ignore" dirsearch -u "{}" -e php,html,js,json,txt,log,zip,conf,sql -w /usr/share/seclists/Discovery/Web-Content/raft-medium-words.txt --threads 30 --timeout 10 --retries 2 --follow-redirects --full-url --output ~/bugbounty/reports/$(echo "{}" | sed "s|https\?://||;s|/|_|g").txt' ; \
 cat technologies.txt | sed 's/\x1b\[[0-9;]*m//g' | grep '\[403' | awk '{print $1}' > 403_subdomains.txt ; \
-sort -u 403_subdomains.txt -o 403_subdomains.txt ; \
+sort -u 403_subdomains.txt -o 403_subdomains.txt
 
-
-// go more into depth for parameter mining
-paramspider -l clean_subdomains.txt && cat results/*.txt > param_urls_temp.txt ; \
-sort -u param_urls_temp.txt -o param_urls.txt ; \
-
-
+paramspider -l clean_subdomains.txt && cat results/*.txt > param_urls.txt ; \
+sort -u param_urls.txt -o param_urls.txt ; \
 python3 /home/c/tools/SecretFinder/SecretFinder.py -i all_subdomains.txt -o possible_secrets_secretfinder.html ; \
 trufflehog filesystem ./ --json > possible_secrets_trufflehog.json ; \
 cat param_urls.txt | gf xss > xss_candidates.txt && cat param_urls.txt | gf sqli > sqli_candidates.txt ; \
 cat param_urls.txt | gf ssrf > ssrf_candidates.txt ; \
 (mkdir -p js_tmp && cd js_tmp && xargs -n 1 -P 10 curl -sO < ../js_urls.txt && retire --path .) 2>&1 | tee retire_js_results.txt && rm -rf js_tmp ; \
-rm -rf reports ; \
+rm -rf reports results ; \
 find . -maxdepth 1 -type f -empty -delete
 
 FIND ALL PORTS
-naabu -list clean_subdomains.txt -top-ports 1000 -o naabu_output.txt && cat naabu_output.txt | httpx -o clean_port_readable_subdomains.txt -title -tech-detect -status-code -server -ip && cat naabu_output.txt | httpx -o clean_port_non_readable_subdomains.txt && cat clean_port_readable_subdomains.txt >> clean_subdomains.txt && cat clean_port_non_readable_subdomains.txt >> technologies.txt && rm naabu_output.txt clean_port_readable_subdomains.txt clean_port_non_readable_subdomains.txt
-choose one
-cat clean_subdomains.txt | httpx -ports 80,81,3000,3001,443,8080,8000,8888,8443,10000,9000,9443,4443,2075,2076,6443,3868,3366,9091,5900 -threads 200 > maybe_cool_subdomains.txt
+cat clean_subdomains.txt | httpx -ports 80,81,3000,3001,443,8080,8000,8888,8443,10000,9000,9443,4443,2075,2076,6443,3868,3366,9091,5900 -threads 200
 
 https://beautifier.io/
 https://nitinyadav00.github.io/Bug-Bounty-Search-Engine/
@@ -95,7 +90,6 @@ AI ASSISTANCE PROMPT GENERATORS
   echo 'For my authorised bug bounty, list the most interesting findings below and what to look into also guide me step by step on exactly what commands to run to test and what to look out for and explain in maximum detail why im running these commands. Also at the end list the specific what you think are important subdomains I should dirsearch to find endpoints to test (include what endpoints you'll think i'll likely find and why if there are clues).'
   [ -f clean_subdomains.txt ] && echo -e '\n\n## All Clean Subdomains\n' && cat clean_subdomains.txt
   [ -f technologies.txt ] && echo -e '\n\n## Technologies\n' && cat technologies.txt
-  [ -f all_subdomains.txt ] && echo -e '\n\n## All Endpoints\n' && cat all_subdomains.txt
   [ -f param_urls.txt ] && echo -e '\n\n## All Parameters\n' && cat param_urls.txt
   echo -e '\n\n## Detected Possible Secrets\n'
   [ -f possible_secrets_secretfinder.html ] && cat possible_secrets_secretfinder.html
@@ -114,7 +108,6 @@ AI ASSISTANCE PROMPT GENERATORS
   echo 'For my authorized bug bounty shown below, I want you to fully map out the website: code, endpoints, and technologies. And try to rebuild their backend. Put this all into a PlantUML code format where I can just plop it into a simple state diagram and it will draw it out for me, for example using: @startuml, State1 --> State2 @enduml. (make sure for every endpoint you include a description of what it's probably for, what status code is responds with and why)'
   [ -f clean_subdomains.txt ] && echo -e '\n\n## All Clean Subdomains\n' && cat clean_subdomains.txt
   [ -f technologies.txt ] && echo -e '\n\n## Technologies\n' && cat technologies.txt
-  [ -f all_subdomains.txt ] && echo -e '\n\n## All Endpoints\n' && cat all_subdomains.txt
   [ -f param_urls.txt ] && echo -e '\n\n## All Parameters\n' && cat param_urls.txt
   echo -e '\n\n## Detected Possible Secrets\n'
   [ -f possible_secrets_secretfinder.html ] && cat possible_secrets_secretfinder.html
