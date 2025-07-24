@@ -97,12 +97,6 @@ $( [ -f param_urls.txt ] && cat param_urls.txt )
 ## Detected Possible Secrets
 $( [ -f possible_secrets_secretfinder.html ] && cat possible_secrets_secretfinder.html )
 $( [ -f possible_secrets_trufflehog.json ] && cat possible_secrets_trufflehog.json )
-## XSS Candidates
-$( [ -f xss_candidates.txt ] && cat xss_candidates.txt )
-## SQLi Candidates
-$( [ -f sqli_candidates.txt ] && cat sqli_candidates.txt )
-## SSRF Candidates
-$( [ -f ssrf_candidates.txt ] && cat ssrf_candidates.txt )
 ## Nuclei Results
 $( [ -f nuclei_scan.txt ] && cat nuclei_scan.txt )
 ## No WAF Subdomains
@@ -126,12 +120,6 @@ $( [ -f param_urls.txt ] && cat param_urls.txt )
 ## Detected Possible Secrets
 $( [ -f possible_secrets_secretfinder.html ] && cat possible_secrets_secretfinder.html )
 $( [ -f possible_secrets_trufflehog.json ] && cat possible_secrets_trufflehog.json )
-## XSS Candidates
-$( [ -f xss_candidates.txt ] && cat xss_candidates.txt )
-## SQLi Candidates
-$( [ -f sqli_candidates.txt ] && cat sqli_candidates.txt )
-## SSRF Candidates
-$( [ -f ssrf_candidates.txt ] && cat ssrf_candidates.txt )
 ## Nuclei Results
 $( [ -f nuclei_scan.txt ] && cat nuclei_scan.txt )
 ## No WAF Subdomains
