@@ -9,6 +9,9 @@ go install github.com/projectdiscovery/httpx/cmd/httpx@latest && \
 go install github.com/projectdiscovery/naabu/v2/cmd/naabu@latest && \
 go install github.com/PentestPad/subzy@latest && \
 go install github.com/projectdiscovery/katana/cmd/katana@latest && \
+go install github.com/hakluke/hakrawler@latest && \
+go install -v github.com/projectdiscovery/urlfinder/cmd/urlfinder@latest && \
+pip3 install waymore --break-system-packages && \
 sudo npm install -g retire && \
 git clone https://github.com/devanshbatham/paramspider.git && \
 cd paramspider && \
