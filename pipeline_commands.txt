@@ -86,41 +86,64 @@ while read url; do dirsearch -u https://$url/ -w /usr/share/seclists/Discovery/W
 while read url; do dirsearch -u "$url/" -w /usr/share/seclists/Discovery/Web-Content/common.txt -e php,js,jpg,png,html,json,txt -H "Referer: https://google.com" -H "X-Forwarded-For: 127.0.0.1" --random-agent --delay 0.5 --max-rate 20 --threads 50 --timeout 10 --exclude-sizes 0 --follow-redirects; done < clean_subdomains.txt
 
 AI ASSISTANCE PROMPT GENERATORS
-{ 
-  echo 'For my authorised bug bounty, list the most interesting findings below and what to look into also guide me step by step on exactly what commands to run to test and what to look out for and explain in maximum detail why im running these commands. Also at the end list the specific what you think are important subdomains I should dirsearch to find endpoints to test (include what endpoints you'll think i'll likely find and why if there are clues).'
-  [ -f clean_subdomains.txt ] && echo -e '\n\n## All Clean Subdomains\n' && cat clean_subdomains.txt
-  [ -f technologies.txt ] && echo -e '\n\n## Technologies\n' && cat technologies.txt
-  [ -f param_urls.txt ] && echo -e '\n\n## All Parameters\n' && cat param_urls.txt
-  echo -e '\n\n## Detected Possible Secrets\n'
-  [ -f possible_secrets_secretfinder.html ] && cat possible_secrets_secretfinder.html
-  [ -f possible_secrets_trufflehog.json ] && cat possible_secrets_trufflehog.json
-  [ -f xss_candidates.txt ] && echo -e '\n\n## XSS Candidates\n' && cat xss_candidates.txt
-  [ -f sqli_candidates.txt ] && echo -e '\n\n## SQLi Candidates\n' && cat sqli_candidates.txt
-  [ -f ssrf_candidates.txt ] && echo -e '\n\n## SSRF Candidates\n' && cat ssrf_candidates.txt
-  [ -f nuclei_scan.txt ] && echo -e '\n\n## Nuclei Results\n' && cat nuclei_scan.txt
-  [ -f nowaf_subdomains.txt ] && echo -e '\n\n## No WAF Subdomains\n' && cat nowaf_subdomains.txt
-  [ -f 403_subdomains.txt ] && echo -e '\n\n## 403 Subdomains\n' && cat 403_subdomains.txt
-  [ -f param_urls.txt ] && echo -e '\n\n## Parameter URLs\n' && cat param_urls.txt
-  [ -f retire_js_results.txt ] && echo -e '\n\n## Retire JS Results\n' && cat retire_js_results.txt
-403_subdomains.txt
-} > prompt_1.txt ; \
-{ 
-  echo 'For my authorized bug bounty shown below, I want you to fully map out the website: code, endpoints, and technologies. And try to rebuild their backend. Put this all into a PlantUML code format where I can just plop it into a simple state diagram and it will draw it out for me, for example using: @startuml, State1 --> State2 @enduml. (make sure for every endpoint you include a description of what it's probably for, what status code is responds with and why)'
-  [ -f clean_subdomains.txt ] && echo -e '\n\n## All Clean Subdomains\n' && cat clean_subdomains.txt
-  [ -f technologies.txt ] && echo -e '\n\n## Technologies\n' && cat technologies.txt
-  [ -f param_urls.txt ] && echo -e '\n\n## All Parameters\n' && cat param_urls.txt
-  echo -e '\n\n## Detected Possible Secrets\n'
-  [ -f possible_secrets_secretfinder.html ] && cat possible_secrets_secretfinder.html
-  [ -f possible_secrets_trufflehog.json ] && cat possible_secrets_trufflehog.json
-  [ -f xss_candidates.txt ] && echo -e '\n\n## XSS Candidates\n' && cat xss_candidates.txt
-  [ -f sqli_candidates.txt ] && echo -e '\n\n## SQLi Candidates\n' && cat sqli_candidates.txt
-  [ -f ssrf_candidates.txt ] && echo -e '\n\n## SSRF Candidates\n' && cat ssrf_candidates.txt
-  [ -f nuclei_scan.txt ] && echo -e '\n\n## Nuclei Results\n' && cat nuclei_scan.txt
-  [ -f nowaf_subdomains.txt ] && echo -e '\n\n## No WAF Subdomains\n' && cat nowaf_subdomains.txt
-  [ -f 403_subdomains.txt ] && echo -e '\n\n## 403 Subdomains\n' && cat 403_subdomains.txt
-  [ -f param_urls.txt ] && echo -e '\n\n## Parameter URLs\n' && cat param_urls.txt
-  [ -f retire_js_results.txt ] && echo -e '\n\n## Retire JS Results\n' && cat retire_js_results.txt
-403_subdomains.txt
-} > prompt_3.txt; explorer.exe .
+cat <<EOF > prompt_main.txt
+For my authorised bug bounty, list the most interesting findings below and what to look into also guide me step by step on exactly what commands to run to test and what to look out for and explain in maximum detail why im running these commands. Also at the end list the specific what you think are important subdomains I should dirsearch to find endpoints to test (include what endpoints you'll think i'll likely find and why if there are clues).
+## All Clean Subdomains
+$( [ -f clean_subdomains.txt ] && cat clean_subdomains.txt )
+## Technologies
+$( [ -f technologies.txt ] && cat technologies.txt )
+## All Parameters
+$( [ -f param_urls.txt ] && cat param_urls.txt )
+## Detected Possible Secrets
+$( [ -f possible_secrets_secretfinder.html ] && cat possible_secrets_secretfinder.html )
+$( [ -f possible_secrets_trufflehog.json ] && cat possible_secrets_trufflehog.json )
+## XSS Candidates
+$( [ -f xss_candidates.txt ] && cat xss_candidates.txt )
+## SQLi Candidates
+$( [ -f sqli_candidates.txt ] && cat sqli_candidates.txt )
+## SSRF Candidates
+$( [ -f ssrf_candidates.txt ] && cat ssrf_candidates.txt )
+## Nuclei Results
+$( [ -f nuclei_scan.txt ] && cat nuclei_scan.txt )
+## No WAF Subdomains
+$( [ -f nowaf_subdomains.txt ] && cat nowaf_subdomains.txt )
+## 403 Subdomains
+$( [ -f 403_subdomains.txt ] && cat 403_subdomains.txt )
+## Parameter URLs
+$( [ -f param_urls.txt ] && cat param_urls.txt )
+## Retire JS Results
+$( [ -f retire_js_results.txt ] && cat retire_js_results.txt )
+EOF
+
+cat <<EOF > prompt_diagram.txt
+For my authorized bug bounty shown below, I want you to fully map out the website: code, endpoints, and technologies. And try to rebuild their backend. Put this all into a PlantUML code format where I can just plop it into a simple state diagram and it will draw it out for me, for example using: @startuml, State1 --> State2 @enduml. (make sure for every endpoint you include a description of what it's probably for, what status code it responds with and why)
+## All Clean Subdomains
+$( [ -f clean_subdomains.txt ] && cat clean_subdomains.txt )
+## Technologies
+$( [ -f technologies.txt ] && cat technologies.txt )
+## All Parameters
+$( [ -f param_urls.txt ] && cat param_urls.txt )
+## Detected Possible Secrets
+$( [ -f possible_secrets_secretfinder.html ] && cat possible_secrets_secretfinder.html )
+$( [ -f possible_secrets_trufflehog.json ] && cat possible_secrets_trufflehog.json )
+## XSS Candidates
+$( [ -f xss_candidates.txt ] && cat xss_candidates.txt )
+## SQLi Candidates
+$( [ -f sqli_candidates.txt ] && cat sqli_candidates.txt )
+## SSRF Candidates
+$( [ -f ssrf_candidates.txt ] && cat ssrf_candidates.txt )
+## Nuclei Results
+$( [ -f nuclei_scan.txt ] && cat nuclei_scan.txt )
+## No WAF Subdomains
+$( [ -f nowaf_subdomains.txt ] && cat nowaf_subdomains.txt )
+## 403 Subdomains
+$( [ -f 403_subdomains.txt ] && cat 403_subdomains.txt )
+## Parameter URLs
+$( [ -f param_urls.txt ] && cat param_urls.txt )
+## Retire JS Results
+$( [ -f retire_js_results.txt ] && cat retire_js_results.txt )
+EOF
+
+explorer.exe .
 
 https://plantuml.com/state-diagram
